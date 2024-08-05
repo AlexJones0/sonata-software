@@ -134,3 +134,38 @@ firmware("snake_demo")
         }, {expand = false})
     end)
     after_link(convert_to_uf2)
+
+-- Malloc compartments for testing cheriot-audit policies
+firmware("malloc-exercise")
+    add_deps("freestanding", "malloc1024", "malloc2048", "malloc4096", "mallocmulti")
+    on_load(function(target)
+        target:values_set("board", "$(board)")
+        target:values_set("threads", {
+            {
+                compartment = "malloc1024",
+                priority = 4,
+                entry_point = "entry_point",
+                stack_size = 0x200,
+                trusted_stack_frames = 2
+            }, {
+                compartment = "malloc2048",
+                priority = 3,
+                entry_point = "entry_point",
+                stack_size = 0x200,
+                trusted_stack_frames = 2
+            }, {
+                compartment = "malloc4096",
+                priority = 2,
+                entry_point = "entry_point",
+                stack_size = 0x200,
+                trusted_stack_frames = 2
+            }, {
+                compartment = "mallocmulti",
+                priority = 1,
+                entry_point = "entry_point",
+                stack_size = 0x200,
+                trusted_stack_frames = 2
+            }
+        }, {expand = false})
+    end)
+    after_link(convert_to_uf2)

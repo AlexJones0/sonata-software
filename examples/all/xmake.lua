@@ -28,3 +28,15 @@ compartment("led_walk")
 compartment("proximity_sensor_example")
     add_deps("debug")
     add_files("proximity_sensor_example.cc")
+
+compartment("malloc1024")
+    add_files("malloc1024.cc")
+
+compartment("malloc2048")
+    add_files("malloc2048.cc")
+
+compartment("malloc4096")
+    add_files("malloc4096.cc")
+
+compartment("mallocmulti")
+    add_files("mallocmulti.cc")
