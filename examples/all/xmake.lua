@@ -40,3 +40,9 @@ compartment("malloc4096")
 
 compartment("mallocmulti")
     add_files("mallocmulti.cc")
+
+compartment("disable_interrupts")
+    add_files("disable_interrupts.cc")
+
+compartment("bad_disable_interrupts")
+    add_files("bad_disable_interrupts.cc")
