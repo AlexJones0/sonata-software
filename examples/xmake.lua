@@ -13,7 +13,7 @@ includes("../common.lua")
 option("board")
     set_default("sonata-prerelease")
 
-includes("all", "snake")
+includes("all", "snake", "automotive")
 
 -- A simple demo using only devices on the Sonata board
 firmware("sonata_simple_demo")
@@ -132,5 +132,22 @@ firmware("snake_demo")
                 trusted_stack_frames = 2
             }
         }, {expand = false})
+    end)
+    after_link(convert_to_uf2)
+
+-- Automotive demo
+firmware("automotive_demo")
+    add_deps("freestanding", "automotive", "bad") --"modified_snake_temp")
+    on_load(function(target)
+        target:values_set("board", "$(board)")
+        target:values_set("threads", {
+        {
+            compartment = "automotive",
+            priority = 1,
+            entry_point = "automotive_entry",
+            stack_size = 0x1000,
+            trusted_stack_frames = 3
+        }
+    }, {expand = false})
     end)
     after_link(convert_to_uf2)
