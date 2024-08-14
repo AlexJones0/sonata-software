@@ -211,8 +211,8 @@ static TaskTwo mem_task_two = {
 
 static TaskOne mem_task_one = {
 	.acceleration = 12,
-	.braking = 59,
-	.speed = 30,
+	.braking = 2,
+	.speed = 0,
 };
 
 bool joystick_in_direction(SonataJoystick joystick,
