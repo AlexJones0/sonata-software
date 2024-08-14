@@ -26,6 +26,7 @@ enum JoystickDir {
 static TaskOne *task_one_mem;
 static TaskTwo *task_two_mem;
 
+static bool first_call = true;
 static uint64_t wait_time;
 static struct {
     uint32_t x;
@@ -36,6 +37,7 @@ static void (*uart_callback)(const char *__restrict__ __format, ...);
 static uint64_t (*wait_callback)(const uint64_t wait_for);
 static uint64_t (*time_callback)();
 static void (*loop_callback)(void);
+static void (*start_callback)(void);
 static uint8_t (*joystick_read_callback)(void);
 // TODO translate this into just a struct of LCD callbacks so this is cleaner & more extensible?
 static void (*lcd_draw_str_callback)(uint32_t x, uint32_t y, const char *format, uint32_t bg_color, uint32_t fg_color, ...);
@@ -64,6 +66,10 @@ void init_time_callback(uint64_t (*callback)()) {
 
 void init_loop_callback(void (*callback)(void)) {
     loop_callback = callback;
+}
+
+void init_start_callback(void (*callback)(void)) {
+    start_callback = callback;
 }
 
 void init_joystick_read_callback(uint8_t (callback)(void)) {
@@ -180,9 +186,13 @@ bool task_one() {
 
 bool task_two() {
     static uint64_t counter;
+    if (first_call) {
+        counter = 0;
+        first_call = false;
+    }
     counter += 1;
     uart_callback("Calling task two update, count = %u\n", (unsigned int) counter);
-    lcd_draw_str_callback(10, 20, "counter = %u;", 0x000000, 0xCCCCCC, counter);
+    lcd_draw_str_callback(10, 20, "counter = %u;", 0x000000, 0xCCCCCC, (unsigned int) counter);
     lcd_draw_str_callback(10, 30, "if (counter <= 100) {", 0x000000, 0xCCCCCC);
     uint32_t text_color = (counter >= 100) ? 0x0000FF : 0xCCCCCC;
     lcd_draw_str_callback(10, 40, "    write[counter] = 1000;", 0x000000, text_color);
@@ -198,10 +208,17 @@ bool task_two() {
 
 void run(uint64_t init_time)
 {
+    // TODO replace with proper zero-ing when pedal added
+    start_callback();
+    task_one_mem->acceleration = 12;
+    task_one_mem->braking = 2;
+    task_one_mem->speed = 0;
+    first_call = true;
+
 	uart_callback("Automotive demo started!\n");
     lcd_draw_str_callback(10, 10, "uint64_t write[100];", 0x000000, 0xCCCCCC);
     uint64_t last_elapsed_time = init_time;
-    for (uint32_t i = 0; i < 128; i++) {
+    for (uint32_t i = 0; i < 175; i++) {
         task_one();
         task_two();
         last_elapsed_time = wait_callback(last_elapsed_time + wait_time);

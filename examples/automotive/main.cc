@@ -85,6 +85,11 @@ uint64_t wait(const uint64_t wait_for) {
     return cur_time;
 }
 
+void reset_error_seen_and_shown(void) {
+    error_seen = false;
+    error_message_shown = false;
+}
+
 void lcd_display_cheri_message(void) {
     if (error_seen && !error_message_shown) {
         error_message_shown = true;
@@ -245,7 +250,7 @@ compartment_error_handler(ErrorState *frame, size_t mcause, size_t mtval)
 }
 
 // Thread entry point.
-[[noreturn]] void __cheri_compartment("automotive") entry() {
+void __cheri_compartment("automotive") entry() {
     
 	lcd = new SonataLcd();
     Size  displaySize = lcd->resolution();
@@ -281,20 +286,19 @@ compartment_error_handler(ErrorState *frame, size_t mcause, size_t mtval)
     init_lcd_fill_rect_callback(lcd_fill_rect);
     init_lcd_draw_img_callback(lcd_draw_img);
     init_loop_callback(lcd_display_cheri_message);
+    init_start_callback(reset_error_seen_and_shown);
     init_joystick_read_callback(read_joystick);
     init_ethernet_transmit_callback(send_ethernet_frame);
 
-    // Run demo selection
-	uint8_t option = select_demo();
+    uint8_t option = 0;
+    while (option < 2) {
+        // Run demo selection
+        option = select_demo();
 
-    // Run automotive demo
-    if (option == 0) {
-        run(rdcycle64());
-    }
-
-    // Infinite loop to keep program running
-    while (true) {
-        thread_millisecond_wait(100);
+        if (option == 0) {
+            // Run automotive demo
+            run(rdcycle64());
+        }
     }
 
     // Cleanup
