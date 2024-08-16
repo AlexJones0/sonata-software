@@ -9,7 +9,9 @@
 #include "../../libraries/lcd.hh"
 #include "../snake/cherry_bitmap.h"
 
-#include "./automotive.c"
+#include "./lib/automotive_common.h"
+#include "./lib/automotive_menu.h"
+#include "./lib/simple_bug.h"
 
 using Debug = ConditionalDebug<true, "Automotive">;
 using namespace CHERI;
@@ -172,42 +174,15 @@ bool null_ethernet_callback(uint8_t *buffer, uint16_t length) {
     return true; 
 };
 
-//uint8_t transmit_buf[128];
-
-typedef struct EthernetHeader {
-    uint8_t mac_destination[6];
-    uint8_t mac_source[6];
-    uint8_t type[2];
-} __attribute__((__packed__)) EthernetHeader;
-
-void send_ethernet_frame(const uint64_t *buffer, uint16_t length) {
-    if (length > (100 / 8)) {
-        length = 100 / 8;
-    }
-    uint8_t *transmit_buf = (uint8_t *) malloc(sizeof(uint8_t) * 128);
-    //uint8_t transmit_buf[128];
-    EthernetHeader header = {
-        {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-        {0x3a, 0x30, 0x25, 0x24, 0xfe, 0x7a},
-        {0x08, 0x06},
-    };
-    for (uint32_t i = 0; i < 14; i++) {
-        transmit_buf[i] = header.mac_destination[i];
-    }
-    for (uint32_t i = 0; i < length; ++i) {
-        transmit_buf[14+i*8+0] = (buffer[i] >> 56) & 0xFF;
-        transmit_buf[14+i*8+1] = (buffer[i] >> 48) & 0xFF;
-        transmit_buf[14+i*8+2] = (buffer[i] >> 40) & 0xFF;
-        transmit_buf[14+i*8+3] = (buffer[i] >> 32) & 0xFF;
-        transmit_buf[14+i*8+4] = (buffer[i] >> 24) & 0xFF;
-        transmit_buf[14+i*8+5] = (buffer[i] >> 16) & 0xFF;
-        transmit_buf[14+i*8+6] = (buffer[i] >> 8 ) & 0xFF;
-        transmit_buf[14+i*8+7] = buffer[i] & 0xFF;
-    }
-    if (!ethernet->send_frame(transmit_buf, 14 + length * 8, null_ethernet_callback)) {
+void send_ethernet_frame(const uint8_t *buffer, uint16_t length) {
+    uint8_t *frame_buf = (uint8_t *) malloc(sizeof(uint8_t) * length);
+    for (uint16_t i = 0; i < length; ++i) {
+        frame_buf[i] = buffer[i];
+    } 
+    if (!ethernet->send_frame(frame_buf, length, null_ethernet_callback)) {
         Debug::log("Error sending frame...");
     }
-    free(transmit_buf);
+    free(frame_buf);
 }
 
 static TaskTwo mem_task_two = {
@@ -218,13 +193,6 @@ static TaskOne mem_task_one = {
 	.acceleration = 12,
 	.braking = 2,
 	.speed = 0,
-};
-
-bool joystick_in_direction(SonataJoystick joystick,
-                            SonataJoystick direction)
-{
-    return (static_cast<uint8_t>(joystick) &
-            static_cast<uint8_t>(direction)) > 0;
 };
 
 extern "C" ErrorRecoveryBehaviour
@@ -275,7 +243,6 @@ void __cheri_compartment("automotive") entry() {
     thread_millisecond_wait(250);
 
     // Adapt common automotive library for CHERIoT drivers
-    init_mem(&mem_task_one, &mem_task_two);
     init_uart_callback(write_to_uart);
 	const uint32_t cyclesPerMillisecond = CPU_TIMER_HZ / 1000;
     init_wait_callback(80 * cyclesPerMillisecond, wait);
@@ -297,7 +264,8 @@ void __cheri_compartment("automotive") entry() {
 
         if (option == 0) {
             // Run automotive demo
-            run(rdcycle64());
+            init_simple_demo_mem(&mem_task_one, &mem_task_two);
+            run_simple_demo(rdcycle64());
         }
     }
 
