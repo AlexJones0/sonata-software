@@ -14,6 +14,8 @@ board will just be a **receiving** board without any bug (**Board 2**).
 PWM. Ground should be connected to a ground on **Board 2**, and the other wire
 should be connected to the **PWM pin** on **Board 2** also. This is located at
 the top of P7, in the mikro BUS section in the centre of the board.
+5. Something to prop up the car, so that it doesn't actually drive during the
+demo and go flying off (or, just stand the car upside down).
 
 ## Setup
 
@@ -24,23 +26,23 @@ the top of P7, in the mikro BUS section in the centre of the board.
  `cheriot-rtos` module sub-directory located below the repository root. This
  patch simply exposes the PWM as MMIO so that it can be used by the receiving
  software.
-```diff
-diff --git a/sdk/boards/sonata-prerelease.json b/sdk/boards/sonata-prerelease.json
-index 1df5862..38582f8 100644
---- a/sdk/boards/sonata-prerelease.json
-+++ b/sdk/boards/sonata-prerelease.json
-@@ -63,6 +63,10 @@
-         "plic": {
-             "start" : 0x88000000,
-             "end"   : 0x88400000
-+        },
-+        "pwm": {
-+            "start" : 0x80001000,
-+            "length": 0x00001000
-         }
-     },
-     "instruction_memory": {
-```
+    ```diff
+    diff --git a/sdk/boards/sonata-prerelease.json b/sdk/boards/sonata-prerelease.json
+    index 1df5862..38582f8 100644
+    --- a/sdk/boards/sonata-prerelease.json
+    +++ b/sdk/boards/sonata-prerelease.json
+    @@ -63,6 +63,10 @@
+            "plic": {
+                "start" : 0x88000000,
+                "end"   : 0x88400000
+    +        },
+    +        "pwm": {
+    +            "start" : 0x80001000,
+    +            "length": 0x00001000
+            }
+        },
+        "instruction_memory": {
+    ```
  - Navigate to the root of the `sonata-software` repository.
  - Make sure you are in a `nix develop` environment.
  - Run `xmake -P examples` to build all example firmware.
@@ -87,7 +89,37 @@ index 1df5862..38582f8 100644
 **To run the sending firmware in legacy (non-CHERIoT mode):**
  - Plug in **only Board 1** via USB.
  - You also need to obtain an updated version of the bitstream with CHERI
- disabled. The steps for that are not covered here.
+ disabled.
+   - Go to the `sonata-system` repository, and apply the following patches:
+
+        ```diff
+        diff --git a/dv/verilator/top_verilator.sv b/dv/verilator/top_verilator.sv
+        index fe16535..406a467 100644
+        --- a/dv/verilator/top_verilator.sv
+        +++ b/dv/verilator/top_verilator.sv
+        @@ -7,7 +7,7 @@ module top_verilator (input logic clk_i, rst_ni);
+        
+        localparam ClockFrequency = 30_000_000;
+        localparam BaudRate       = 921_600;
+        -  localparam EnableCHERI    = 1'b1;
+        +  localparam EnableCHERI    = 1'b0;  // Patchwork: temporarily disable CHERI.
+        
+        logic uart_sys_rx, uart_sys_tx;
+        
+        diff --git a/rtl/fpga/top_sonata.sv b/rtl/fpga/top_sonata.sv
+        index 032dc3f..3a0721d 100644
+        --- a/rtl/fpga/top_sonata.sv
+        +++ b/rtl/fpga/top_sonata.sv
+        @@ -291,7 +291,7 @@ module top_sonata (
+        
+        // Enable CHERI by default.
+        logic enable_cheri;
+        -  assign enable_cheri = 1'b1;
+        +  assign enable_cheri = 1'b0;  // Patchwork: temporarily disable CHERI.
+        
+        logic rgbled_dout;
+        
+        ```
    - Make sure you convert the bitstream to a UF2 using the updated RP2040
    firmware ID, i.e. using
 

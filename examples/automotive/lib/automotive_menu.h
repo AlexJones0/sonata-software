@@ -6,10 +6,17 @@
 
 #include <stdint.h>
 
+typedef enum DemoApplication {
+    NoPedal = 0,
+    JoystickPedal = 1,
+    DigitalPedal = 2,
+    AnaloguePedal = 3,
+} DemoApplication;
+
 #ifdef __cplusplus
 extern "C" {
 #endif //__cplusplus
-uint8_t select_demo();
+DemoApplication select_demo();
 #ifdef __cplusplus
 }
 #endif //__cplusplus

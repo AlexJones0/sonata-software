@@ -11,7 +11,9 @@
 
 #include "./lib/automotive_common.h"
 #include "./lib/automotive_menu.h"
-#include "./lib/simple_bug.h"
+#include "./lib/no_pedal.h"
+#include "./lib/joystick_pedal.h"
+#include "./lib/digital_pedal.h"
 
 using Debug = ConditionalDebug<true, "Automotive">;
 using namespace CHERI;
@@ -98,18 +100,18 @@ void lcd_display_cheri_message(void) {
         Size  displaySize = lcd->resolution();
         Point centre      = {displaySize.width / 2, displaySize.height / 2};
         
-        lcd->draw_str({centre.x - 70, centre.y + 5}, 
+        lcd->draw_str({centre.x - 70, centre.y + 27}, 
             "Unexpected CHERI capability violation!", 
             Color::Black, Color::Red);
-        lcd->draw_str({centre.x - 65, centre.y + 18},
+        lcd->draw_str({centre.x - 65, centre.y + 40},
             "Memory has been safely protected",
             Color::Black, Color::Green);
-        lcd->draw_str({centre.x - 20, centre.y + 28},
+        lcd->draw_str({centre.x - 20, centre.y + 50},
             "by CHERI.",
             Color::Black, Color::Green);
 		lcd->draw_image_rgb565(
             Rect::from_point_and_size(
-                {centre.x + 20, centre.y + 28},
+                {centre.x + 20, centre.y + 50},
                 {10, 10}
             ), cherryImage10x10);
     }
@@ -163,14 +165,19 @@ uint8_t read_joystick(void) {
     return static_cast<uint8_t>(gpio->read_joystick());
 }
 
+bool read_pedal_digital(void) {
+    auto gpio = MMIO_CAPABILITY(SonataGPIO, gpio);
+    return (gpio->input & (1 << 13)) > 0;
+}
+
+uint32_t read_pedal_analogue(void) {
+    // TODO after implementing the ADC driver
+    return 0;
+}
+
 void null_callback(void) {};
 
 bool null_ethernet_callback(uint8_t *buffer, uint16_t length) { 
-    /*Debug::log("Length: {}", (int) length);
-    for (uint32_t i = 0; i < length; i++) {
-        Debug::log("  byte {}: {}", (int) i, buffer[i]);
-    }*/
-    //thread_millisecond_wait(10000);
     return true; 
 };
 
@@ -188,7 +195,6 @@ void send_ethernet_frame(const uint8_t *buffer, uint16_t length) {
 static TaskTwo mem_task_two = {
 	.write = {0},
 };
-
 static TaskOne mem_task_one = {
 	.acceleration = 12,
 	.braking = 2,
@@ -243,29 +249,57 @@ void __cheri_compartment("automotive") entry() {
     thread_millisecond_wait(250);
 
     // Adapt common automotive library for CHERIoT drivers
-    init_uart_callback(write_to_uart);
 	const uint32_t cyclesPerMillisecond = CPU_TIMER_HZ / 1000;
-    init_wait_callback(80 * cyclesPerMillisecond, wait);
-    init_time_callback(rdcycle64);
     init_lcd(displaySize.width, displaySize.height);
-    init_lcd_draw_str_callback(lcd_draw_str);
-    init_lcd_clean_callback(lcd_clean);
-    init_lcd_fill_rect_callback(lcd_fill_rect);
-    init_lcd_draw_img_callback(lcd_draw_img);
-    init_loop_callback(lcd_display_cheri_message);
-    init_start_callback(reset_error_seen_and_shown);
-    init_joystick_read_callback(read_joystick);
-    init_ethernet_transmit_callback(send_ethernet_frame);
+    init_callbacks({
+        .uart_send = write_to_uart,
+        .wait = wait,
+        .wait_time = 120 * cyclesPerMillisecond,
+        .time = rdcycle64,
+        .loop = lcd_display_cheri_message,
+        .start = reset_error_seen_and_shown,
+        .joystick_read = read_joystick,
+        .digital_pedal_read = read_pedal_digital,
+        .analogue_pedal_read = read_pedal_analogue,
+        .ethernet_transmit = send_ethernet_frame,
+        .lcd = {
+            .draw_str = lcd_draw_str,
+            .clean = lcd_clean,
+            .fill_rect = lcd_fill_rect,
+            .draw_img_rgb565 = lcd_draw_img,
+        },
+    });
 
-    uint8_t option = 0;
-    while (option < 2) {
+    DemoApplication option;
+    while (true) {
         // Run demo selection
         option = select_demo();
 
-        if (option == 0) {
-            // Run automotive demo
-            init_simple_demo_mem(&mem_task_one, &mem_task_two);
-            run_simple_demo(rdcycle64());
+        // Run automotive demo
+        switch (option) {
+            case NoPedal:
+                // Run simple timed demo with no pedal & using passthrough
+                init_no_pedal_demo_mem(&mem_task_one, &mem_task_two);
+                run_no_pedal_demo(rdcycle64());
+                break;
+            case JoystickPedal:
+                // Run demo using a joystick as a pedal, with passthrough
+                init_joystick_demo_mem(&mem_task_one, &mem_task_two);
+                run_joystick_demo(rdcycle64());
+                break;
+            case DigitalPedal:
+                // Run demo using an actual physical pedal but taking
+                // a digital signal, using simulation instead of passthrough
+                init_digital_pedal_demo_mem(&mem_task_one, &mem_task_two);
+                run_digital_pedal_demo(rdcycle64());
+                break;
+            case AnaloguePedal:
+                // TODO not implemented yet
+                Debug::log("This demo is not yet implemented. It requires an ADC");
+                // Run demo using an actual physical pedal, taking an
+                // analogue signal via an ADC, with passthrough.
+                break;
+
         }
     }
 

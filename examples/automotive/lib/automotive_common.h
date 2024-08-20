@@ -15,50 +15,89 @@ enum JoystickDir {
 	Right   = 1 << 4,
 };
 
+typedef enum LCDColor {
+    ColorBlack = 0x000000,
+    ColorWhite = 0xFFFFFF,
+    ColorGrey  = 0xCCCCCC,
+    ColorRed   = 0x0000FF,
+} LCDColor;
+
 typedef struct EthernetHeader {
     uint8_t mac_destination[6];
     uint8_t mac_source[6];
     uint8_t type[2];
 } __attribute__((__packed__)) EthernetHeader;
 
+typedef enum DemoMode {
+    DemoModePassthrough = 0,
+    DemoModeSimulated = 1,
+} DemoMode;
+
+typedef enum FrameType {
+    FrameDemoMode = 0,
+    FramePedalData = 1,
+} FrameType;
+
+typedef struct DemoFrame {
+    EthernetHeader header;
+    FrameType type;
+    union {
+        DemoMode mode;
+        uint8_t pedalData[16];
+    } data;
+} DemoFrame;
+
 typedef struct {
     uint32_t x;
     uint32_t y;
 } LCD_Size;
 
-extern uint64_t wait_time;
-extern LCD_Size lcdSize, lcdCentre;
+typedef struct LCD_Callbacks {
+    void (*draw_str)(uint32_t x, uint32_t y, const char *format, uint32_t bg_color, uint32_t fg_color, ...);
+    void (*clean)(uint32_t color);
+    void (*fill_rect)(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t color);
+    void (*draw_img_rgb565)(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint8_t *data);
+} LCD_Callbacks;
 
-extern void (*uart_callback)(const char *__restrict__ __format, ...);
-extern uint64_t (*wait_callback)(const uint64_t wait_for);
-extern uint64_t (*time_callback)();
-extern void (*loop_callback)(void);
-extern void (*start_callback)(void);
-extern uint8_t (*joystick_read_callback)(void);
-// TODO translate this into just a struct of LCD callbacks so this is cleaner & more extensible?
-extern void (*lcd_draw_str_callback)(uint32_t x, uint32_t y, const char *format, uint32_t bg_color, uint32_t fg_color, ...);
-extern void (*lcd_clean_callback)(uint32_t color);
-extern void (*lcd_fill_rect_callback)(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t color);
-extern void (*lcd_draw_img_callback)(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint8_t *data);
-extern void (*ethernet_transmit_callback)(const uint8_t *buffer, uint16_t length);
+typedef struct Automotive_Callbacks {
+    void (*uart_send)(const char *__restrict__ __format, ...);
+    uint64_t (*wait)(const uint64_t wait_for);
+    uint64_t wait_time;
+    uint64_t (*time)();
+    void (*loop)(void);
+    void (*start)(void);
+    uint8_t (*joystick_read)(void);
+    bool (*digital_pedal_read)(void);
+    uint32_t (*analogue_pedal_read)(void); 
+    void (*ethernet_transmit)(const uint8_t *buffer, uint16_t length);
+    LCD_Callbacks lcd;
+} Automotive_Callbacks;
+
+
+typedef struct TaskOne {
+    uint64_t acceleration;
+    uint64_t braking;
+    uint64_t speed;
+} TaskOne;
+
+typedef struct TaskTwo {
+    uint64_t write[100];
+} TaskTwo;
+
+
+extern LCD_Size lcdSize, lcdCentre;
+extern Automotive_Callbacks callbacks;
+extern const EthernetHeader FixedDemoHeader;
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif //__cplusplus
-void init_uart_callback(void (*callback)(const char *__restrict__ __format, ...));
-void init_wait_callback(uint64_t duration, uint64_t (*callback)(const uint64_t wait_for));
-void init_time_callback(uint64_t (*callback)());
-void init_loop_callback(void (*callback)(void));
-void init_start_callback(void (*callback)(void));
-void init_joystick_read_callback(uint8_t (callback)(void));
 void init_lcd(uint32_t size_x, uint32_t size_y);
-void init_lcd_draw_str_callback(void (*callback)(uint32_t x, uint32_t y, const char *format, uint32_t bg_color, uint32_t fg_color, ...));
-void init_lcd_clean_callback(void (*callback)(uint32_t color));
-void init_lcd_fill_rect_callback(void (*callback)(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t color));
-void init_lcd_draw_img_callback(void (*callback)(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint8_t *data));
-void init_ethernet_transmit_callback(void (*callback)(const uint8_t *buffer, uint16_t length));
+void init_callbacks(Automotive_Callbacks auto_callbacks);
 bool joystick_in_direction(uint8_t joystick, enum JoystickDir direction);
-void send_frame(const uint64_t *data, EthernetHeader header, uint16_t length);
+void send_data_frame(const uint64_t *data, EthernetHeader header, uint16_t length);
+void send_mode_frame(EthernetHeader header, DemoMode mode);
 #ifdef __cplusplus
 }
 #endif //__cplusplus
