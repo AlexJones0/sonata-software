@@ -22,6 +22,12 @@ typedef enum LCDColor {
     ColorRed   = 0x0000FF,
 } LCDColor;
 
+typedef enum LCDFont {
+    M3x6_16pt,
+    LucidaConsole_10pt,
+    LucidaConsole_12pt,
+} LCDFont;
+
 typedef struct EthernetHeader {
     uint8_t mac_destination[6];
     uint8_t mac_source[6];
@@ -53,7 +59,7 @@ typedef struct {
 } LCD_Size;
 
 typedef struct LCD_Callbacks {
-    void (*draw_str)(uint32_t x, uint32_t y, const char *format, uint32_t bg_color, uint32_t fg_color, ...);
+    void (*draw_str)(uint32_t x, uint32_t y, LCDFont font, const char *format, uint32_t bg_color, uint32_t fg_color, ...);
     void (*clean)(uint32_t color);
     void (*fill_rect)(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t color);
     void (*draw_img_rgb565)(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint8_t *data);

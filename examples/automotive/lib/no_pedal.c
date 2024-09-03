@@ -38,11 +38,11 @@ bool task_two() {
     }
     counter += 1;
     callbacks.uart_send("Calling task two update, count = %u\n", (unsigned int) counter);
-    callbacks.lcd.draw_str(10, 20, "counter = %u;", ColorBlack, ColorGrey, (unsigned int) counter);
-    callbacks.lcd.draw_str(10, 30, "if (counter <= 100) {", ColorBlack, ColorGrey);
+    callbacks.lcd.draw_str(10, 20, M3x6_16pt, "counter = %u;", ColorBlack, ColorGrey, (unsigned int) counter);
+    callbacks.lcd.draw_str(10, 30, M3x6_16pt, "if (counter <= 100) {", ColorBlack, ColorGrey);
     uint32_t text_color = (counter >= 100) ? ColorRed : ColorGrey;
-    callbacks.lcd.draw_str(10, 40, "    write[counter] = 1000;", ColorBlack, text_color);
-    callbacks.lcd.draw_str(10, 50, "}", ColorBlack, ColorGrey);
+    callbacks.lcd.draw_str(10, 40, M3x6_16pt, "    write[counter] = 1000;", ColorBlack, text_color);
+    callbacks.lcd.draw_str(10, 50, M3x6_16pt, "}", ColorBlack, ColorGrey);
     if (counter == 100) {
         callbacks.uart_send("counter == 100: triggering a bug\n");
     }
@@ -63,8 +63,8 @@ void run_no_pedal_demo(uint64_t init_time)
     task_one_mem->speed = 0;
     first_call_to_task = true;
 
-	callbacks.uart_send("Automotive demo started!\n");
-    callbacks.lcd.draw_str(10, 10, "uint64_t write[100];", ColorBlack, ColorGrey);
+    callbacks.uart_send("Automotive demo started!\n");
+    callbacks.lcd.draw_str(10, 10, M3x6_16pt, "uint64_t write[100];", ColorBlack, ColorGrey);
     uint64_t last_elapsed_time = init_time;
     for (uint32_t i = 0; i < 175; i++) {
         task_one();

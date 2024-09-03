@@ -7,10 +7,10 @@
 #include <stdint.h>
 
 typedef enum DemoApplication {
-    NoPedal = 0,
-    JoystickPedal = 1,
-    DigitalPedal = 2,
-    AnaloguePedal = 3,
+    AnaloguePedal = 0,
+    DigitalPedal  = 1,
+    JoystickPedal = 2,
+    NoPedal       = 3,
 } DemoApplication;
 
 #ifdef __cplusplus

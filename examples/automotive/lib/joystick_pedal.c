@@ -19,9 +19,9 @@ static bool joystick_task_one() {
     callbacks.uart_send("Sending pedal data: acceleration=%u, braking=%u.\n", 
         (unsigned int) task_one_mem->acceleration, 
         (unsigned int) task_one_mem->braking);
-    callbacks.lcd.draw_str(10, 50, "Current speed: %u   ", ColorBlack, ColorGrey, 
+    callbacks.lcd.draw_str(10, 50, M3x6_16pt, "Current speed: %u   ", ColorBlack, ColorGrey,
         (unsigned int) task_one_mem->speed);
-    callbacks.lcd.draw_str(10, 60, "Joystick up/down to change speed", ColorBlack, ColorGrey);
+    callbacks.lcd.draw_str(10, 60, M3x6_16pt, "Joystick up/down to change speed", ColorBlack, ColorGrey);
     uint8_t joystick = callbacks.joystick_read();
     if (joystick_in_direction(joystick, Right) && task_one_mem->speed < 99) {
         task_one_mem->speed += 1;
@@ -50,11 +50,11 @@ static bool joystick_task_one() {
 bool joystick_task_two() {
     volatile uint32_t count = 99;
     if (!isBugged) {
-        callbacks.lcd.draw_str(10, 20, "Not triggered", ColorBlack, ColorGrey);
-        callbacks.lcd.draw_str(10, 30, "Joystick left/right to trigger", ColorBlack, ColorGrey);
+        callbacks.lcd.draw_str(10, 20, M3x6_16pt, "Not triggered", ColorBlack, ColorGrey);
+        callbacks.lcd.draw_str(10, 30, M3x6_16pt, "Joystick left/right to trigger", ColorBlack, ColorGrey);
     } else {
         count = 100;
-        callbacks.lcd.draw_str(10, 20, "Bug triggered", ColorBlack, ColorGrey);
+        callbacks.lcd.draw_str(10, 20, M3x6_16pt, "Bug triggered", ColorBlack, ColorGrey);
     }
     if (count <= 100) {
         task_two_mem->write[count] = 1000;
@@ -79,7 +79,7 @@ void run_joystick_demo(uint64_t init_time)
     while (stillRunning) {
         joystick_task_one();
         joystick_task_two();
-        callbacks.lcd.draw_str(10, 80, "Press the joystick to end the demo.", ColorBlack, ColorGrey);
+        callbacks.lcd.draw_str(10, 80, M3x6_16pt, "Press the joystick to end the demo.", ColorBlack, ColorGrey);
         if (last_elapsed_time > (init_time + callbacks.wait_time * 5) && joystick_in_direction(callbacks.joystick_read(), Pressed)) {
             stillRunning = false;
             callbacks.uart_send("Manually ended joystick demo by pressing joystick.");

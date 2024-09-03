@@ -44,11 +44,11 @@ static bool digital_task_one() {
 bool digital_task_two() {
     volatile uint32_t count = 99;
     if (!isBugged) {
-        callbacks.lcd.draw_str(10, 20, "Not triggered", ColorBlack, ColorGrey);
-        callbacks.lcd.draw_str(10, 30, "Joystick left/right to trigger", ColorBlack, ColorGrey);
+        callbacks.lcd.draw_str(10, 20, M3x6_16pt, "Not triggered", ColorBlack, ColorGrey);
+        callbacks.lcd.draw_str(10, 30, M3x6_16pt, "Joystick left/right to trigger", ColorBlack, ColorGrey);
     } else {
         count = 100;
-        callbacks.lcd.draw_str(10, 20, "Bug triggered", ColorBlack, ColorGrey);
+        callbacks.lcd.draw_str(10, 20, M3x6_16pt, "Bug triggered", ColorBlack, ColorGrey);
     }
     if (count <= 100) {
         task_two_mem->write[count] = 1000;
@@ -73,7 +73,7 @@ void run_digital_pedal_demo(uint64_t init_time)
     while (stillRunning) {
         digital_task_one();
         digital_task_two();
-        callbacks.lcd.draw_str(10, 80, "Press the joystick to end the demo.", ColorBlack, ColorGrey);
+        callbacks.lcd.draw_str(10, 80, M3x6_16pt, "Press the joystick to end the demo.", ColorBlack, ColorGrey);
         if (last_elapsed_time > (init_time + callbacks.wait_time * 5) && joystick_in_direction(callbacks.joystick_read(), Pressed)) {
             stillRunning = false;
             callbacks.uart_send("Manually ended joystick demo by pressing joystick.");
