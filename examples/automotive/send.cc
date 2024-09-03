@@ -46,7 +46,7 @@ static bool errorSeen = false;
 // message has been shown yet or not.
 static bool errorMessageShown = false;
 
-// Global driver structs for use in callback functionality
+// Global driver objects for use in callback functionality
 EthernetDevice *ethernet;
 SonataAdc      *adc;
 SonataLcd      *lcd;
@@ -196,7 +196,7 @@ void lcd_display_cheri_message()
  */
 void lcd_draw_str(uint32_t    x,
                   uint32_t    y,
-                  LCDFont     font,
+                  LcdFont     font,
                   const char *format,
                   uint32_t    backgroundColour,
                   uint32_t    textColour,
@@ -305,7 +305,7 @@ bool read_pedal_digital()
  * measurement into the acceleration range defined for the demo.
  *
  * Returns a value between DEMO_ACCELERATION_PEDAL_MIN and
- * DEMO_ACCELERATION_PEDAL_MAX corresponding to the analogue pedal input.
+ * DEMO_ACCELERATION_PEDAL_MAX, corresponding to the analogue pedal input.
  */
 uint32_t read_pedal_analogue()
 {
@@ -412,7 +412,7 @@ compartment_error_handler(ErrorState *frame, size_t mcause, size_t mtval)
 
 // Initialise memory for the tasks used in the automotive demo library code.
 // We use linker script sections to ensure that memory is contiguous in the
-// worst conceivable way such that an overwrite to the task two array by
+// worst conceivable way, such that an overwrite to the task two array by
 // just one byte directly writes into the task one acceleration value.
 
 __attribute__((
@@ -451,23 +451,23 @@ __attribute__((
 	{
 		switch (select_demo())
 		{
-			case NoPedal:
+			case DemoNoPedal:
 				// Run simple timed demo with no pedal & using passthrough
 				init_no_pedal_demo_mem(&memTaskOne, &memTaskTwo);
 				run_no_pedal_demo(rdcycle64());
 				break;
-			case JoystickPedal:
+			case DemoJoystickPedal:
 				// Run demo using a joystick as a pedal, with passthrough
 				init_joystick_demo_mem(&memTaskOne, &memTaskTwo);
 				run_joystick_demo(rdcycle64());
 				break;
-			case DigitalPedal:
+			case DemoDigitalPedal:
 				// Run demo using an actual physical pedal but taking
 				// a digital signal, using simulation instead of passthrough
 				init_digital_pedal_demo_mem(&memTaskOne, &memTaskTwo);
 				run_digital_pedal_demo(rdcycle64());
 				break;
-			case AnaloguePedal:
+			case DemoAnaloguePedal:
 				// Run demo using an actual physical pedal, taking an
 				// analogue signal via an ADC, with passthrough.
 				init_analogue_pedal_demo_mem(&memAnalogueTaskOne,
@@ -530,7 +530,7 @@ void __cheri_compartment("automotive_send") entry()
 	init_callbacks({
 	  .uart_send           = write_to_uart,
 	  .wait                = wait,
-	  .wait_time           = 120 * CyclesPerMillisecond,
+	  .waitTime            = 120 * CyclesPerMillisecond,
 	  .time                = rdcycle64,
 	  .loop                = lcd_display_cheri_message,
 	  .start               = reset_error_seen_and_shown,
@@ -550,7 +550,7 @@ void __cheri_compartment("automotive_send") entry()
 	// Begin the main demo loop
 	main_demo_loop();
 
-	// Cleanup
+	// Driver cleanup
 	delete lcd;
 	delete ethernet;
 	delete adc;

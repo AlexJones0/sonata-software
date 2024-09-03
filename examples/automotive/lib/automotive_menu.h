@@ -6,17 +6,19 @@
 
 #include <stdint.h>
 
-typedef enum DemoApplication {
-    AnaloguePedal = 0,
-    DigitalPedal  = 1,
-    JoystickPedal = 2,
-    NoPedal       = 3,
+typedef enum DemoApplication
+{
+	DemoAnaloguePedal = 0,
+	DemoDigitalPedal  = 1,
+	DemoJoystickPedal = 2,
+	DemoNoPedal       = 3,
 } DemoApplication;
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif //__cplusplus
-DemoApplication select_demo();
+	DemoApplication select_demo();
 #ifdef __cplusplus
 }
 #endif //__cplusplus

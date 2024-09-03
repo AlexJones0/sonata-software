@@ -117,7 +117,7 @@ void receive_ethernet_frame(CarInfo *carInfo)
 	uint32_t  index = 0;
 	for (; index < 14; index++)
 	{
-		frame.header.mac_destination[index] = maybeFrame->buffer[index];
+		frame.header.macDestination[index] = maybeFrame->buffer[index];
 	}
 
 	// Parse the first bit to determine if the frame is a demo mode frame or
@@ -401,7 +401,7 @@ void update_demo_simulation(CarInfo *carInfo, Point centre)
 
 	// Display acceleration & speed information to the LCD
 	Color accelerationColor =
-	  (carInfo->acceleration > 100) ? TEXT_DIMMED_COLOUR : Color::Red;
+	  (carInfo->acceleration >= 100) ? Color::Red : TEXT_DIMMED_COLOUR;
 	const Point AccelerationLabelPos = {centre.x - 70, centre.y - 56};
 	const Point SpeedLabelPos        = {centre.x - 20, centre.y - 36};
 	const Point SpeedometerPos       = {centre.x - 48, centre.y - 18};
