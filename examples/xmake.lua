@@ -141,7 +141,7 @@ firmware("proximity_test")
 
 -- Demo that does proximity test as well as LCD screen, etc for demos.
 firmware("leds_and_lcd")
-    add_deps("freestanding", "led_walk_raw", "lcd_test", "rgbled_lerp")
+    add_deps("freestanding", "led_walk_raw", "lcd_test", "rgbled_lerp", "sense_hat_test")
     on_load(function(target)
         target:values_set("board", "$(board)")
         target:values_set("threads", {
@@ -164,6 +164,13 @@ firmware("leds_and_lcd")
                 priority = 2,
                 entry_point = "lerp_rgbleds",
                 stack_size = 0x200,
+                trusted_stack_frames = 1
+            },
+            {
+                compartment = "sense_hat_test",
+                priority = 2,
+                entry_point = "test",
+                stack_size = 0x1000,
                 trusted_stack_frames = 1
             }
         }, {expand = false})
