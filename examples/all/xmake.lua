@@ -25,4 +25,4 @@ compartment("proximity_sensor_example")
 
 compartment("sense_hat_test")
     add_deps("debug", "sense_hat")
-    add_files("sense_hat_test.cc")
+    add_files("sense_hat_test.cc", "../../third_party/display_drivers/core/m3x6_16pt.c")
